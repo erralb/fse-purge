@@ -72,7 +72,7 @@ class FSEPurge
             <?php else: ?>
                 <p>No FSE templates found.</p>
             <?php endif; ?>
-            <h2>Delete All FSE Templates</h2>
+            <h3>Delete All FSE Templates</h3>
             <form method="post">
                 <input type="hidden" name="fse_purge_action" value="delete_templates">
                 <div style="background: #ffebe8; border: 1px solid #dd3c10; padding: 10px; margin-bottom: 20px;">
@@ -81,6 +81,43 @@ class FSEPurge
                     <p>Clicking this button will delete <b>all</b> FSE templates (wp_template posts) permanently, for all users and themes</p>
                 </div>
                 <p><input type="submit" class="button button-primary" value="Delete FSE Templates"></p>
+            </form>
+            <?php
+            if (isset($_POST['fse_purge_global_styles_action']) && $_POST['fse_purge_global_styles_action'] === 'delete_global_styles') {
+                if ($this->delete_global_styles()) {
+                    echo '<div class="notice notice-success is-dismissible"><p>All FSE global styles have been deleted.</p></div>';
+                } else {
+                    echo '<div class="notice notice-error is-dismissible"><p>Error deleting global styles.</p></div>';
+                }
+            }
+
+            // Fetch all wp_template posts to display count and list
+            $global_styles = get_posts(array(
+                'post_type' => 'wp_global_styles',
+                'numberposts' => -1,
+                'post_status' => 'any',
+            ));
+            ?>
+            <hr>
+            <h2>FSE Global Styles</h2>
+            <?php if (count($global_styles) > 0): ?>
+                <ul>
+                    <?php foreach ($global_styles as $style): ?>
+                        <li><?php echo esc_html($style->post_title); ?> (ID: <?php echo $style->ID; ?>)</li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p>No FSE global styles found.</p>
+            <?php endif; ?>
+            <h2>Delete All FSE Global Styles</h2>
+            <form method="post">
+                <input type="hidden" name="fse_purge_global_styles_action" value="delete_global_styles">
+                <div style="background: #ffebe8; border: 1px solid #dd3c10; padding: 10px; margin-bottom: 20px;">
+                    <p><b>Warning</b>: This action cannot be undone !!!</p>
+                    <p>Make sure to backup the database before proceeding.</p>
+                    <p>Clicking this button will delete <b>all</b> FSE global styles (wp_global_styles posts) permanently, for all users and themes</p>
+                </div>
+                <p><input type="submit" class="button button-primary" value="Delete FSE Global Styles"></p>
             </form>
         </div>
 <?php
@@ -100,11 +137,19 @@ class FSEPurge
 
         return true;
     }
-}
 
-// Admin notice after deletion
-add_action('admin_notices', function () {
-    if (isset($_GET['deleted']) && $_GET['deleted'] == 1) {
-        echo '<div class="notice notice-success is-dismissible"><p>All FSE templates have been deleted.</p></div>';
+    private function delete_global_styles()
+    {
+        $styles = get_posts(array(
+            'post_type' => 'wp_global_styles',
+            'numberposts' => -1,
+            'post_status' => 'any',
+        ));
+
+        foreach ($styles as $style) {
+            wp_delete_post($style->ID, true);
+        }
+
+        return true;
     }
-});
+}
